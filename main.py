@@ -4,12 +4,13 @@ from pathlib import Path
 
 from product import PhysicalProduct, DigitalProduct
 from inventory import Inventory
+from supplier import Supplier
 
 
 FILE_PATH = Path(__file__).with_name("inventory.json")
 
 
-def create_product(item):
+def create_product(item, supplier):
     product_type = item.get("type")
 
     # Handle products saved in the old Lab 6 format
@@ -41,7 +42,7 @@ def create_product(item):
             raise ValueError("Weight cannot be negative.")
 
         return PhysicalProduct(
-            product_id, name, price, stock, weight
+            product_id, name, price, stock, weight, supplier
         )
 
     elif product_type == "digital":
@@ -54,14 +55,14 @@ def create_product(item):
             raise ValueError("Download size cannot be negative.")
 
         return DigitalProduct(
-            product_id, name, price, stock, download_size
+            product_id, name, price, stock, download_size, supplier
         )
 
     else:
         raise ValueError("Unknown product type.")
 
 
-def load_inventory(inventory):
+def load_inventory(inventory, supplier):
     if not FILE_PATH.exists():
         return True
 
@@ -73,7 +74,7 @@ def load_inventory(inventory):
         loaded_products = []
 
         for item in products:
-            product = create_product(item)
+            product = create_product(item, supplier)
             loaded_products.append(product)
 
         for product in loaded_products:
@@ -116,8 +117,9 @@ def save_inventory(inventory):
 
 def main():
     inventory = Inventory()
+    supplier = Supplier("S001", "ABC Supplies", "abc@example.com")
 
-    if not load_inventory(inventory):
+    if not load_inventory(inventory, supplier):
         return
 
     while True:
@@ -168,7 +170,7 @@ def main():
                         continue
 
                     product = PhysicalProduct(
-                        product_id, name, price, stock, weight
+                        product_id, name, price, stock, weight, supplier
                     )
 
                 else:
@@ -181,7 +183,7 @@ def main():
                         continue
 
                     product = DigitalProduct(
-                        product_id, name, price, stock, download_size
+                        product_id, name, price, stock, download_size, supplier
                     )
 
                 inventory.add_product(product)
