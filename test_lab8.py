@@ -103,3 +103,15 @@ for product in inventory_lsp.get_all_products():
     product.display_information()
     print(product.get_fulfilment_info())
 
+
+from discount import BulkDiscount, PercentageDiscount
+
+print("\n--- Lab 9 Strategy Test ---")
+
+discount_order = Order("O003", BulkDiscount(200, 20))
+discount_order.add_order_line(digital, 5)
+
+print("Bulk discount total:", discount_order.calculate_total())
+
+discount_order.set_discount(PercentageDiscount(10))
+print("Percentage discount total:", discount_order.calculate_total())

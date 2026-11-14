@@ -1,13 +1,65 @@
-
+import csv
 import json
 from pathlib import Path
 
 from product import PhysicalProduct, DigitalProduct
+from product_factory import ProductFactory
 from inventory import Inventory
 from supplier import Supplier
 
 
 FILE_PATH = Path(__file__).with_name("inventory.json")
+
+
+def get_positive_float(prompt: str) -> float:
+    while True:
+        try:
+            value = float(input(prompt))
+            if value <= 0:
+                print("Please enter a number greater than zero.")
+                continue
+            return value
+        except ValueError:
+            print("Please enter a valid number, e.g. 12.50")
+
+
+def load_products(path: str, inventory: Inventory, supplier: Supplier) -> None:
+    try:
+        file = open(path, newline="")
+
+    except FileNotFoundError:
+        print(f"Products file not found: {path}")
+
+    else:
+        loaded = 0
+
+        with file:
+            reader = csv.reader(file)
+            next(reader, None)
+
+            for row_number, row in enumerate(reader, start=2):
+                try:
+                    product_type, product_id, name, price, stock = row
+
+                    product = ProductFactory.create(
+                        product_type,
+                        product_id,
+                        name,
+                        float(price),
+                        int(stock),
+                        supplier
+                    )
+
+                    inventory.add_product(product)
+                    loaded += 1
+
+                except ValueError as error:
+                    print(f"Skipped row {row_number}: {error}")
+
+        print(f"{loaded} products loaded.")
+
+    finally:
+        print("Load attempt finished.")
 
 
 def create_product(item, supplier):
@@ -41,8 +93,9 @@ def create_product(item, supplier):
         if weight < 0:
             raise ValueError("Weight cannot be negative.")
 
-        return PhysicalProduct(
-            product_id, name, price, stock, weight, supplier
+        return ProductFactory.create(
+            "physical", product_id, name, price, stock,
+            supplier, weight=weight
         )
 
     elif product_type == "digital":
@@ -54,8 +107,9 @@ def create_product(item, supplier):
         if download_size < 0:
             raise ValueError("Download size cannot be negative.")
 
-        return DigitalProduct(
-            product_id, name, price, stock, download_size, supplier
+        return ProductFactory.create(
+            "digital", product_id, name, price, stock,
+            supplier, download_size=download_size
         )
 
     else:
@@ -151,7 +205,7 @@ def main():
             name = input("Enter product name: ").strip()
 
             try:
-                price = float(input("Enter price: "))
+                price = get_positive_float("Enter price: ")
                 stock = int(input("Enter stock quantity: "))
 
                 if not product_id or not name:
@@ -169,8 +223,9 @@ def main():
                         print("Weight cannot be negative.")
                         continue
 
-                    product = PhysicalProduct(
-                        product_id, name, price, stock, weight, supplier
+                    product = ProductFactory.create(
+                        "physical", product_id, name, price, stock,
+                        supplier, weight=weight
                     )
 
                 else:
@@ -182,8 +237,9 @@ def main():
                         print("Download size cannot be negative.")
                         continue
 
-                    product = DigitalProduct(
-                        product_id, name, price, stock, download_size, supplier
+                    product = ProductFactory.create(
+                        "digital", product_id, name, price, stock,
+                        supplier, download_size=download_size
                     )
 
                 inventory.add_product(product)
